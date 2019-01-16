@@ -32,31 +32,7 @@ class AdminResourceController extends Controller
     public function index(Request $request)
     {
         //
-        $category   = $request->get('category');
-        $program   = $request->get('program');
-        $title      = $request->get('title');
-        $status      = $request->get('status');
-        //  
-
-        $resources = DB::table('KOSM_RESOURCE')
-                    ->join('KOSM_RESOURCE_CATEGORY', 'KOSM_RESOURCE.RESOURCE_CATEGORY_ID', 'KOSM_RESOURCE_CATEGORY.RESOURCE_CATEGORY_ID')
-                    ->join('KOSM_PROGRAM', 'KOSM_RESOURCE.PROGRAM_ID', 'KOSM_PROGRAM.PROGRAM_ID')
-                    ->select('KOSM_RESOURCE.*','KOSM_RESOURCE_CATEGORY.RESOURCE_CATEGORY_ID', 'KOSM_RESOURCE_CATEGORY.CATEGORY_NAME', 'KOSM_PROGRAM.PROGRAM_ID', 'KOSM_PROGRAM.PROGRAM_NAME')
-                    ->where('KOSM_RESOURCE_CATEGORY.RESOURCE_CATEGORY_ID','LIKE','%'.$category.'%')
-                    ->where('KOSM_PROGRAM.PROGRAM_ID','LIKE','%'.$program.'%')
-                    ->where('KOSM_RESOURCE.RESOURCE_NAME','LIKE','%'.$title.'%')
-                    ->where('KOSM_RESOURCE.ACTIVE_STATUS','LIKE','%'.$status.'%')
-                    ->orderby('KOSM_RESOURCE.RESOURCE_ID', 'DESC')
-                    ->paginate(50)
-                    ->appends(['category' => $category, 'program' => $program, 'title' => $title, 'status' => $status]);
-
-        $categories = DB::select('SELECT * FROM KOSM_RESOURCE_CATEGORY WHERE ACTIVE_STATUS = 1 ORDER BY CATEGORY_NAME');
-
-        $programs = DB::select('SELECT * FROM KOSM_PROGRAM WHERE ACTIVE_STATUS = 1 ORDER BY PROGRAM_NAME');
-
-        return view('dashbord_resource_list')->with('resources', $resources)
-                                            ->with('categories', $categories)
-                                            ->with('programs', $programs);
+        
     }
 
 
@@ -67,12 +43,7 @@ class AdminResourceController extends Controller
      */
     public function create()
     {
-        $categories = DB::select('SELECT * FROM KOSM_RESOURCE_CATEGORY WHERE ACTIVE_STATUS = 1 ORDER BY CATEGORY_NAME');
-
-        $programs = DB::select('SELECT * FROM KOSM_PROGRAM WHERE ACTIVE_STATUS = 1 ORDER BY PROGRAM_NAME');
-                    
-        return view('dashbord_resource_upload')->with('categories',$categories)
-                                            ->with('programs', $programs);
+        
     }
 
 
@@ -135,21 +106,6 @@ class AdminResourceController extends Controller
             'ENTRY_TIMESTAMP' => Carbon::now()
          ]);
 
-        $categories = DB::select('SELECT * FROM KOSM_RESOURCE_CATEGORY WHERE ACTIVE_STATUS = 1 ORDER BY CATEGORY_NAME');
-
-        $programs = DB::select('SELECT * FROM KOSM_PROGRAM WHERE ACTIVE_STATUS = 1 ORDER BY PROGRAM_NAME');
-
-        if (isset($insert)) {
-          return view('dashbord_resource_upload')->with('status','Resource Created Succesfully')
-                                             ->with('categories',$categories)
-                                             ->with('programs', $programs);
-        }else{
-          return view('dashbord_resource_upload')->with('status','Something Went Wrong Try Again later...')
-                                             ->with('categories',$categories)
-                                             ->with('programs', $programs);
-        }
-      
-       
     }
 
     /**
@@ -160,15 +116,7 @@ class AdminResourceController extends Controller
      */
     public function show($id)
     {
-        $resource_details = DB::table('KOSM_RESOURCE')
-                            ->join('KOSM_RESOURCE_CATEGORY', 'KOSM_RESOURCE.RESOURCE_CATEGORY_ID', 'KOSM_RESOURCE_CATEGORY.RESOURCE_CATEGORY_ID')
-                            ->join('KOSM_PROGRAM', 'KOSM_RESOURCE.PROGRAM_ID', 'KOSM_PROGRAM.PROGRAM_ID')
-                            ->select('KOSM_RESOURCE.*','KOSM_RESOURCE_CATEGORY.RESOURCE_CATEGORY_ID', 'KOSM_RESOURCE_CATEGORY.CATEGORY_NAME', 'KOSM_PROGRAM.PROGRAM_ID', 'KOSM_PROGRAM.PROGRAM_NAME')
-                            ->where('KOSM_RESOURCE.RESOURCE_ID',$id)
-                            -> get();
-
-
-       return view('dashbord_resource_view')->with('resource_details',$resource_details);
+        
     }
 
 
@@ -182,20 +130,7 @@ class AdminResourceController extends Controller
      */
     public function edit($id)
     {
-        $resource_details = DB::table('KOSM_RESOURCE')
-                            ->join('KOSM_RESOURCE_CATEGORY', 'KOSM_RESOURCE.RESOURCE_CATEGORY_ID', 'KOSM_RESOURCE_CATEGORY.RESOURCE_CATEGORY_ID')
-                            ->join('KOSM_PROGRAM', 'KOSM_RESOURCE.PROGRAM_ID', 'KOSM_PROGRAM.PROGRAM_ID')
-                            ->select('KOSM_RESOURCE.*','KOSM_RESOURCE_CATEGORY.RESOURCE_CATEGORY_ID', 'KOSM_RESOURCE_CATEGORY.CATEGORY_NAME', 'KOSM_PROGRAM.PROGRAM_ID', 'KOSM_PROGRAM.PROGRAM_NAME')
-                            ->where('KOSM_RESOURCE.RESOURCE_ID',$id)
-                            -> get();
-
-        $categories = DB::select('SELECT * FROM KOSM_RESOURCE_CATEGORY WHERE ACTIVE_STATUS = 1 ORDER BY CATEGORY_NAME');
-
-        $programs = DB::select('SELECT * FROM KOSM_PROGRAM WHERE ACTIVE_STATUS = 1 ORDER BY PROGRAM_NAME');
-
-        return view('dashbord_resource_edit')->with('resource_details',$resource_details)
-                                        ->with('categories',$categories)
-                                        ->with('programs', $programs);
+        
 
     }
 
@@ -234,7 +169,7 @@ class AdminResourceController extends Controller
             $path = $request->file('resource')->move('uploads/images/resource', $fileNameToStore);
 
 
-            // Delete Old File
+            // Delete Old File if New File Uploaded
             $files =  DB::table('KOSM_RESOURCE')
                       ->select('KOSM_RESOURCE.*')
                       ->where('RESOURCE_ID', $id)
@@ -246,7 +181,7 @@ class AdminResourceController extends Controller
             }
 
 
-
+			// Update Database
             $update =  DB::table('KOSM_RESOURCE')
                       ->where('RESOURCE_ID', $id)
                       ->update([
@@ -262,7 +197,8 @@ class AdminResourceController extends Controller
                     ]);
         }
         else{
-                        
+                   
+			// Update Database
             $update =  DB::table('KOSM_RESOURCE')
                       ->where('RESOURCE_ID', $id)
                       ->update([
@@ -286,7 +222,7 @@ class AdminResourceController extends Controller
                         -> get();
 
 
-            return view('dashbord_resource_view')->with('status','Resource Updated Succesfully')->with('resource_details',$resource_details);
+        return view('dashbord_resource_view')->with('status','Resource Updated Successfully')->with('resource_details',$resource_details);
    
     }
 
@@ -299,6 +235,7 @@ class AdminResourceController extends Controller
     public function destroy($id)
     {
         // Delete File
+		// File must be deleted first before delete the database info
         $files =  DB::table('KOSM_RESOURCE')
                   ->select('KOSM_RESOURCE.*')
                   ->where('RESOURCE_ID', $id)
@@ -316,48 +253,7 @@ class AdminResourceController extends Controller
 
         
         //
-        return redirect()->route('resource.index', ['success' => encrypt("Reasource Delete Succesfully")]); 
+        return redirect()->route('resource.index', ['success' => encrypt("Resource Delete Successfully")]); 
     }
 
-    // Change Slide Active Status
-    public function changeStatus($id){
-
-
-        $ACTIVE_STATUS = DB::SELECT(" SELECT ACTIVE_STATUS FROM KOSM_RESOURCE WHERE RESOURCE_ID = '$id'");
-
-        foreach ($ACTIVE_STATUS as $value) {
-            
-            $status = $value->ACTIVE_STATUS;
-
-        }
-
-        if ($status == 1) {
-           $update =  DB::table('KOSM_RESOURCE')
-                              ->where('RESOURCE_ID', $id)
-                              ->update([
-                                'ACTIVE_STATUS' => 0
-                            ]);
-        }else{
-            $update =  DB::table('KOSM_RESOURCE')
-                              ->where('RESOURCE_ID', $id)
-                              ->update([
-                                'ACTIVE_STATUS' => 1
-                            ]);
-        }
-
-        $resources = DB::table('KOSM_RESOURCE')
-                            ->join('KOSM_RESOURCE_CATEGORY', 'KOSM_RESOURCE.RESOURCE_CATEGORY_ID', 'KOSM_RESOURCE_CATEGORY.RESOURCE_CATEGORY_ID')
-                            ->join('KOSM_PROGRAM', 'KOSM_RESOURCE.PROGRAM_ID', 'KOSM_PROGRAM.PROGRAM_ID')
-                            ->select('KOSM_RESOURCE.*','KOSM_RESOURCE_CATEGORY.RESOURCE_CATEGORY_ID', 'KOSM_RESOURCE_CATEGORY.CATEGORY_NAME', 'KOSM_PROGRAM.PROGRAM_ID', 'KOSM_PROGRAM.PROGRAM_NAME')
-                            ->where('KOSM_RESOURCE.RESOURCE_ID',$id)
-                            ->paginate(50);
-
-        $categories = DB::select('SELECT * FROM KOSM_RESOURCE_CATEGORY WHERE ACTIVE_STATUS = 1 ORDER BY CATEGORY_NAME');
-
-        $programs = DB::select('SELECT * FROM KOSM_PROGRAM WHERE ACTIVE_STATUS = 1 ORDER BY PROGRAM_NAME');
-
-        return view('dashbord_resource_list')->with('resources', $resources)
-                                            ->with('categories', $categories)
-                                            ->with('programs', $programs);
-    }
 }
